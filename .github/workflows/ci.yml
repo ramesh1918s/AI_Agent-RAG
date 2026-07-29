@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Cache Poetry venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Ruff lint
+        run: poetry run ruff check .
+
+      - name: Black check
+        run: poetry run black --check .
+
+      - name: Mypy
+        run: poetry run mypy . || true # tightened once modules beyond Part-1 land
+
+      - name: Pytest
+        run: poetry run pytest --cov=. --cov-report=xml
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive terraform/ || true
+      - name: Terraform validate
+        run: |
+          if [ -d "terraform" ] && [ -n "$(find terraform -name '*.tf')" ]; then
+            cd terraform && terraform init -backend=false && terraform validate
+          else
+            echo "No Terraform files yet — skipping (populated from Part-8 onward)."
+          fi
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [lint-and-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (no push — Part-15 adds registry push)
+        run: docker build -f docker/Dockerfile -t infra-ai-agent:ci .

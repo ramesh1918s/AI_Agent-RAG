@@ -1,0 +1,40 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+dist/
+build/
+*.egg-info/
+
+# --- Env / secrets ---
+.env
+*.pem
+*.key
+
+# --- Terraform ---
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+terraform-engine/workspaces/**/.terraform.lock.hcl
+
+# --- Vector DB / data ---
+vector-db/data/
+docs/raw/
+embeddings/cache/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- ingestion scratch cache ---
+.cache/
